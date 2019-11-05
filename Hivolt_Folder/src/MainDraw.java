@@ -15,10 +15,12 @@ public class MainDraw extends JComponent {
     private boolean isAlive = true; //Keeps track if the player is alive
     private boolean jump = false; //Keeps track if the player is jumping right now 
     private int turn = 0;
+    private int deadMhos = 0;
+    private int deathCount = 0;
     BufferedImage playerSprite = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/steve.png"); //Sprite for the player
 	BufferedImage MhoSprite = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/creeper.jpg"); //Sprite for the Mhos
-	BufferedImage animation3 = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/lava.jpg"); //Sprite for the fences
-	BufferedImage animation4 = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/deathscreen.jpg"); //Sprite for the death screen
+	BufferedImage fenceSprite = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/lava.jpg"); //Sprite for the fences
+	BufferedImage deathScreen = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/deathscreen.jpg"); //Sprite for the death screen
 	BufferedImage winScreen = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/winscreen.jpg"); //Sprite for win screen
 
     private int[][]Mho = new int[12][2]; //Nested array containing the coordinates of the Mhos
@@ -31,38 +33,46 @@ public class MainDraw extends JComponent {
     	double length = getSize().width; 
     	double height = getSize().height;
     	g.setColor(Color.black);
-    	
-    	
     	g.drawImage(playerSprite, x, y, null); //draws the player
         super.paintComponent(g);
         drawGraph(g);
-        drawouterFences(g, length, height,animation3);
-        drawinnerFences(g, animation3);
+        drawouterFences(g, length, height,fenceSprite);
+        drawinnerFences(g, fenceSprite);
         checkDead();
         if (!isAlive) {
         	g.setColor(Color.black);
         	g.fillRect(0,0,(int) length, (int)height);
-        	g.drawImage(animation4, 0, 0, null);
+        	g.drawImage(deathScreen, 0, 0, null);
         } else {
         	if (checkVictory()) {
         		drawWinScreen(g, length, height);
         	} else {	
 	        if (jump) {
 		        drawMhos(g, MhoSprite);
+		        drawScore(g);
 		        checkDead();
 		        jump = false;
 		     } else {
-		        if (turn == 0) {
+		        if (turn == 0) { //Ensures the Mhos don't move on the very first turn, right before the player has a chance to react
 		        	turn = 1;
 		        	drawMhos(g, MhoSprite);
+		        	drawScore(g);
 		        } else {
 		        moveMhos();
 		        drawMhos(g, MhoSprite);
+		        drawScore(g);
 		        checkDead();
 		        }
         	}
         }
         } 	
+    }
+    public void drawScore(Graphics g) {
+    	g.setColor(Color.black);
+    	Font myfont = new Font("Courier New",1, 25);
+    	g.setFont(myfont);
+    	g.drawString("Score: " + deadMhos, 450, 25);
+    	//g.drawString("Deaths: " + deathCount, 250, 25);
     }
     public void drawGraph(Graphics g) {
         for (int i = 0;i < 13; i++) { //draws the grid
@@ -86,13 +96,8 @@ public class MainDraw extends JComponent {
      * Checks if all the Mho's are dead and thus, the player is victorious
      */
     public boolean checkVictory() {
-    	int deadMhocount = 0; //The number of dead Mhos
-    	for (int i = 0; i < 12; i++) {
-        	if (Mho[i][0] == 0 && Mho[i][1] == 0) {
-        		deadMhocount += 1;
-        	}
-    	}
-    	if (deadMhocount == 12) { //If the number of dead Mhos is 12, then it means all the Mhos are dead and the player won
+    	System.out.println(deadMhos);
+    	if (deadMhos == 12) { //If the number of dead Mhos is 12, then it means all the Mhos are dead and the player won
     		return true;
     	} else {
     		return false;
@@ -195,6 +200,9 @@ public class MainDraw extends JComponent {
 
     }
     /**
+     * @param changeX The planned movement on the X-axis
+     * @param changeY The planned movement on the Y-axis
+     * @param i The current Mho in the list being looked at
      * @return Boolean that represents if there is any instance of the Mho overlapping with another Mho
      */
     public boolean checkOverlap(int changeX, int changeY, int i) { //check for overlap of mhos with mhos
@@ -214,6 +222,7 @@ public class MainDraw extends JComponent {
     			if ((Mho[i][0]) == (innerFences[k][0]) && (Mho[i][1]) == (innerFences[k][1])) {
     				Mho[i][0] = 0;
     				Mho[i][1] = 0;
+    				deadMhos += 1;
     			} 
     		}
     	}
@@ -222,6 +231,7 @@ public class MainDraw extends JComponent {
     			if ((outerFences[i][0]) == (Mho[k][0]) && (outerFences[i][1]) == (Mho[k][1])) {
     				Mho[k][0] = 0;
     				Mho[k][1] = 0;
+    				deadMhos += 1;
     			}
     		}
     	}
@@ -233,7 +243,6 @@ public class MainDraw extends JComponent {
         for (int i =0; i < 12; i ++) {
         	g.setColor(Color.yellow);
         	g.drawImage(animation2, Mho[i][0],  Mho[i][1], null);
-        	//g.fillRect(Mho[i][0], Mho[i][1], amount, amount);
         }
         g.clearRect(0, 0, amount, amount);
     }
@@ -244,18 +253,21 @@ public class MainDraw extends JComponent {
     	for (int i = 0; i < 12; i++) { //check for overlap of mhos with player
     		if ((Mho[i][0] == x) && (Mho[i][1] == y)) {
     			isAlive = false;
+    			deathCount += 1;
     			repaint();
     		}
    		}
     	for (int i = 0; i < 20; i++) { //check for overlap of inner fences with player
     		if ((innerFences[i][0] == x) && (innerFences[i][1] == y)) {
     			isAlive = false;
+    			deathCount += 1;
     			repaint();
     		}
    		}
     	for (int i = 0; i < 44; i++) { //check for overlap of outer fences with player
     		if ((x == outerFences[i][0]) && (y == outerFences[i][1])) {
     			isAlive = false;
+    			deathCount += 1;
     			repaint();
     		}
     		}
@@ -277,31 +289,29 @@ public class MainDraw extends JComponent {
     public void drawouterFences(Graphics g, double length, double height, BufferedImage animation3) {
     	g.setColor(Color.RED);
     	for (int i = 0; i < 11; i++) {
-    		//g.fillRect(80 +amount * i, amount, amount, amount); //top
-    		g.drawImage(animation3, 80 + amount * i, amount, null);
+    		g.drawImage(animation3, 80 + amount * i, amount, null); //top fences
     		outerFences[i][0] = 80 + amount * i;
     		outerFences[i][1] = amount;
-    		//g.fillRect(amount, amount +amount * i, amount, amount); //left
-    		g.drawImage(animation3, amount, amount + amount * i, null);
+    		g.drawImage(animation3, amount, amount + amount * i, null); //left fences
     		outerFences[i+11][0] = amount;
     		outerFences[i+11][1] = amount + amount * i;
-    		//g.fillRect(480, 80 + amount * i, amount, amount);
-    		g.drawImage(animation3, 480, 80 + amount * i, null);
+    		g.drawImage(animation3, 480, 80 + amount * i, null); //right fences
     		outerFences[i+22][0] = 480;
     		outerFences[i+22][1] = 80 + amount * i;
-    		//g.fillRect(amount + amount * i, 480, amount, amount);
-    		g.drawImage(animation3, amount + amount * i, 480, null);
+    		g.drawImage(animation3, amount + amount * i, 480, null); //bottom fences
     		outerFences[i+33][0] = amount + amount * i;
     		outerFences[i+33][1] = 480;
     	}
     	g.setColor(Color.black);
-    	//System.out.println(Arrays.deepToString(Fences));
     }
     //super invokes constructor for super class (in constructor of subclass)
     //superclass is directly above in class hierarchy
     //Access field in class that is masked (use as keyword)
     //only works in constructor and nonstatic method
     //super gives access to fields in superclass for a particular instance
+    /**
+     * Generates coordinates for the player
+     */
     public void spawnPlayer() {
     	Random rand = new Random();
     	int rand_int = rand.nextInt(10);
@@ -310,6 +320,9 @@ public class MainDraw extends JComponent {
     	y = 80 + rand_int2 * amount;
     	System.out.println(x + " and " + y);
     }
+    /**
+     * Generates coordinates for the Mhos
+     */
     public void spawnMhos() {
     	Random rand2 = new Random();
     	for (int i = 0; i < 12; i++) { //coordinates of Mhos
@@ -321,6 +334,9 @@ public class MainDraw extends JComponent {
         	Mho[i][1] = Mhoy;
     	}
     }
+    /**
+     * Generates coordinates for the inner fences
+     */
     public void spawnFences() {
     	Random rand = new Random();
     	for (int i = 0; i < 20; i++) { //coordinates of inner fences
@@ -332,12 +348,13 @@ public class MainDraw extends JComponent {
         	innerFences[i][1] = fencey;
     	}
     }
+    /**
+     * Checks for overlap of player with other game objects. If there is an overlap, regenerate player's coordinates
+     */
     public void recalculatePlayer() {
     	for (int i = 0; i < 12; i++) {  	
-    		System.out.println(Mho[i][0] / amount + " and " + Mho[i][1] / amount);
-    		
+    		//System.out.println(Mho[i][0] / amount + " and " + Mho[i][1] / amount);
     		if ((Mho[i][0]) == (x) && ((Mho[i][1]) == (y))) {
-    			//System.out.println("overlap");
     			spawnPlayer();
     			recalculatePlayer();
     			}
@@ -350,9 +367,11 @@ public class MainDraw extends JComponent {
     			}
     		}
     	}
-    	System.out.println(x/amount + "and" + y/amount);
+    	//System.out.println(x/amount + "and" + y/amount);
     	}
-    
+    /**
+     * Checks for overlap of Mhos with inner fences or other Mhos. If there is an overlap, regenerate Mho's coordinates
+     */
     public void recalculateMhos() {
     	for (int i = 0; i < 12; i++) { //check for overlap of mhos with mhos
     		for (int k = i + 1; k < 12; k ++) {
@@ -371,6 +390,9 @@ public class MainDraw extends JComponent {
     		}
     	}
     }
+    /**
+     * Checks for overlap of inner fences with other inner fences. If there is an overlap, regenerate fence coordinates
+     */
     public void recalculateFences() {
     	for (int i = 0; i < 20; i++) { //check for overlap of inner fences with inner fences
     		for (int k = i + 1; k < 20; k ++) {
@@ -388,6 +410,7 @@ public class MainDraw extends JComponent {
     	Random rand = new Random();
     	isAlive = true;
     	turn = 0;
+    	deadMhos = 0;
     	int rand_int = rand.nextInt(10);
     	int rand_int2 = rand.nextInt(10);
     	x = 80 + rand_int * amount; //coordinates of player (randomly generated)
@@ -408,9 +431,9 @@ public class MainDraw extends JComponent {
         	innerFences[i][0] = fencex;
         	innerFences[i][1] = fencey;
     	}
-    	recalculateFences();
-    	recalculateMhos();
-    	recalculatePlayer();    	
+    	recalculateFences(); //makes sure fences don't overlap
+    	recalculateMhos(); //makes sure Mhos and fences don't overlap
+    	recalculatePlayer(); //makes sure player doesn't overlap with Mhos or fences
     	repaint();
     }
     public void moveRight() {
@@ -461,24 +484,23 @@ public class MainDraw extends JComponent {
     	int numberY = random.nextInt(max - min) + min;
     	x = amount * numberX;
     	y = amount * numberY;
-    	if ((numberX == 0) && (numberY == 0)) {
+    	if ((numberX == 0) && (numberY == 0)) { //Ensures the player doesn't stay still after jumping
     		moveJump();
     	}
     	for (int i = 0; i < 20; i++) { //check for overlap of inner fences with player
     		if ((innerFences[i][0] == x) && (innerFences[i][1] == y)) { 
     			x = x - amount * numberX;
     	    	y = y - amount * numberY;
-    			moveJump(); //Regenerate the numbers if the player ends up jumping onto a fence
+    			moveJump(); //Regenerate the numbers if the player ends up jumping onto an inner fence
     		}
    		}
     	for (int i = 0; i < 44; i++) { //check for overlap of outer fences with player
     		if ((outerFences[i][0] == x) && (outerFences[i][1] == y)) {
     			x = x - amount * numberX;
     	    	y = y - amount * numberY;
-    			moveJump();;
+    			moveJump(); //Regenerate the numbers if the player ends up jumping onto an outer fence
     		}
     	}
-    	//System.out.println(numberX + "and " + numberY);
     	jump = true;
     	repaint();
     }
