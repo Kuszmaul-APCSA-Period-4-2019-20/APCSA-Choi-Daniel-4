@@ -19,6 +19,7 @@ public class MainDraw extends JComponent {
 	BufferedImage MhoSprite = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/creeper.jpg"); //Sprite for the Mhos
 	BufferedImage animation3 = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/lava.jpg"); //Sprite for the fences
 	BufferedImage animation4 = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/deathscreen.jpg"); //Sprite for the death screen
+	BufferedImage winScreen = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/winscreen.jpg"); //Sprite for win screen
 
     private int[][]Mho = new int[12][2]; //Nested array containing the coordinates of the Mhos
     private int[][]outerFences = new int[44][2]; //Nested array containing the coordinates of the outer fences
@@ -34,10 +35,7 @@ public class MainDraw extends JComponent {
     	
     	g.drawImage(playerSprite, x, y, null); //draws the player
         super.paintComponent(g);
-        for (int i = 0;i < 13; i++) { //draws the grid
-        	g.drawLine(amount, amount + amount * i, 13 * amount, amount + amount * i);
-        	g.drawLine(amount + amount * i, amount, amount + amount * i,13 * amount);
-        }
+        drawGraph(g);
         drawouterFences(g, length, height,animation3);
         drawinnerFences(g, animation3);
         checkDead();
@@ -66,10 +64,17 @@ public class MainDraw extends JComponent {
         }
         } 	
     }
+    public void drawGraph(Graphics g) {
+        for (int i = 0;i < 13; i++) { //draws the grid
+        	g.drawLine(amount, amount + amount * i, 13 * amount, amount + amount * i);
+        	g.drawLine(amount + amount * i, amount, amount + amount * i,13 * amount);
+        }
+    }
     public void drawWinScreen(Graphics g, double length, double height) {
-    	g.setColor(Color.blue);
-    	g.fillRect(0,0,(int)length, (int)height);
-    	g.setColor(Color.green);
+    	g.drawImage(winScreen,0,  0, null);
+    	//g.setColor(Color.blue);
+    	//g.fillRect(0,0,(int)length, (int)height);
+    	g.setColor(Color.red);
 		Font myfont = new Font("Courier New",1, 50);
     	g.setFont(myfont);
     	g.drawString("You Win!", 135, 250);
@@ -117,7 +122,7 @@ public class MainDraw extends JComponent {
         		checkIfMhoDead();*/
         	else if ((Mho[i][0]-x) == (Mho[i][1]-y)) { //If the Mho is located directly diagonal to the player, move towards the player
         		if ((x < Mho[i][0] && y < Mho[i][1])) { 
-        			if (checkOverlap(-amount,-amount)) { 
+        			if (checkOverlap(-amount,-amount,i)) { 
         				//don't move
         			} else {
         				Mho[i][0] -= amount;
@@ -125,7 +130,7 @@ public class MainDraw extends JComponent {
     	        		checkIfMhoDead();
         			}
         		} else {
-        			if (checkOverlap(amount,amount)) { 
+        			if (checkOverlap(amount,amount,i)) { 
         				//don't move
         			} else {
         				Mho[i][0] += amount;
@@ -135,7 +140,7 @@ public class MainDraw extends JComponent {
         		}
         	} else if (-1 * (Mho[i][0]-x) == (Mho[i][1]-y)) {
         		if ((x > Mho[i][0] && y < Mho[i][1])) {
-        			if (checkOverlap(amount,-amount)) { 
+        			if (checkOverlap(amount,-amount,i)) { 
         				//don't move
         			} else {
         				Mho[i][0] += amount;
@@ -143,7 +148,7 @@ public class MainDraw extends JComponent {
     	        		checkIfMhoDead();
         			}
         		} else {
-        			if (checkOverlap(-amount,amount)) { 
+        			if (checkOverlap(-amount,amount,i)) { 
         				//don't move
         			} else {
         				Mho[i][0] -= amount;
@@ -153,14 +158,14 @@ public class MainDraw extends JComponent {
         		}
         	} else if (Math.abs(x - Mho[i][0]) <= Math.abs(y - Mho[i][1])) { //If vertical distance is larger than horizontal distance, move vertically towards player
         		if (y > Mho[i][1]) {
-        			if (checkOverlap(0,amount)) { //if it is going to land on another Mho, don't move
+        			if (checkOverlap(0,amount,i)) { //if it is going to land on another Mho, don't move
         				//don't move
         			} else {
         			Mho[i][1] += amount; //otherwise, it can move in the specified direction
             		checkIfMhoDead();
         			}
         		} else if (y < Mho[i][1]) {
-        			if (checkOverlap(0,-amount)) { 
+        			if (checkOverlap(0,-amount,i)) { 
         				//don't move
         			} else {
         			Mho[i][1] -= amount; 
@@ -169,14 +174,14 @@ public class MainDraw extends JComponent {
         		}
         	} else if (Math.abs(x - Mho[i][0]) >= Math.abs(y - Mho[i][1])) { //If horizontal distance is larger than vertical distance, move horizontally towards player
         		if (x > Mho[i][0]) {
-        			if (checkOverlap(amount,0)) { 
+        			if (checkOverlap(amount,0,i)) { 
         				//don't move
         			} else {
         				Mho[i][0] += amount; 
                 		checkIfMhoDead();
         			}
         		} else if (x < Mho[i][0]) {
-        			if (checkOverlap(-amount,0)) { 
+        			if (checkOverlap(-amount,0,i)) { 
         				//don't move
         			} else {
         				Mho[i][0] -= amount; 
@@ -192,14 +197,12 @@ public class MainDraw extends JComponent {
     /**
      * @return Boolean that represents if there is any instance of the Mho overlapping with another Mho
      */
-    public boolean checkOverlap(int changeX, int changeY) {
-    	for (int i = 0; i < 12; i++) { //check for overlap of mhos with mhos
-    		for (int k = i+1; k < 12; k ++) {
-    			if (((Mho[i][0] + changeX) == (Mho[k][0])) && ((Mho[i][1] + changeY) == (Mho[k][1]))) {
+    public boolean checkOverlap(int changeX, int changeY, int i) { //check for overlap of mhos with mhos
+    	for (int k = i+1; k < 12; k ++) {
+    		if (((Mho[i][0] + changeX) == (Mho[k][0])) && ((Mho[i][1] + changeY) == (Mho[k][1]))) { //if the Mho moves into a position where another mho is, return true
     				return true;
     			}
-    		}
-    	}
+    		}	
     	return false;
     }
     /**
