@@ -14,9 +14,9 @@ public class MainDraw extends JComponent {
     private int y = amount * 2; //The current y position of the player
     private boolean isAlive = true; //Keeps track if the player is alive
     private boolean jump = false; //Keeps track if the player is jumping right now 
-    private int turn = 0;
-    private int deadMhos = 0;
-    private int deathCount = 0;
+    private int turn = 0; //Keeps track of what turn number  the game is on
+    private int deadMhos = 0; //Counts the number of dead Mhos
+    private int winCount = 0; //Counts the number of times the player has won
     BufferedImage playerSprite = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/steve.png"); //Sprite for the player
 	BufferedImage MhoSprite = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/creeper.jpg"); //Sprite for the Mhos
 	BufferedImage fenceSprite = Sprite.loadSprite("/Users/95024738/Desktop/Hivolts/lava.jpg"); //Sprite for the fences
@@ -39,15 +39,10 @@ public class MainDraw extends JComponent {
         drawouterFences(g, length, height,fenceSprite);
         drawinnerFences(g, fenceSprite);
         checkDead();
-        if (!isAlive) {
-        	g.setColor(Color.black);
-        	g.fillRect(0,0,(int) length, (int)height);
-        	g.drawImage(deathScreen, 0, 0, null);
-        } else {
-        	if (checkVictory()) {
-        		drawWinScreen(g, length, height);
-        	} else {	
-	        if (jump) {
+        if (!isAlive) { //If you're dead, then draw the death screen spite
+        	drawDeathScreen(g);
+        } else {	
+	        if (jump) { //If the player jumps, then the Mho's don't move
 		        drawMhos(g, MhoSprite);
 		        drawScore(g);
 		        checkDead();
@@ -62,28 +57,37 @@ public class MainDraw extends JComponent {
 		        drawMhos(g, MhoSprite);
 		        drawScore(g);
 		        checkDead();
+		        if (checkVictory()) { //If you won then draw the win game sprite
+	        		drawWinScreen(g);
 		        }
-        	}
-        }
-        } 	
+		        }
+		     }
+        	}	
     }
+    /**
+     * @param g Graphics object that lets the method draw the player's score and the number of wins on the screen
+     */
     public void drawScore(Graphics g) {
     	g.setColor(Color.black);
     	Font myfont = new Font("Courier New",1, 25);
     	g.setFont(myfont);
-    	g.drawString("Score: " + deadMhos, 450, 25);
-    	//g.drawString("Deaths: " + deathCount, 250, 25);
+    	g.drawString("Score: " + deadMhos, 450, 25); //Prints the number of death Mhos
+    	g.drawString("Wins: " + winCount, 250, 25); //Prints the number of times the player has won the game so far
     }
+    /**
+     * @param g Graphics object to help the method draw the lines that make up the grid
+     */
     public void drawGraph(Graphics g) {
-        for (int i = 0;i < 13; i++) { //draws the grid
-        	g.drawLine(amount, amount + amount * i, 13 * amount, amount + amount * i);
-        	g.drawLine(amount + amount * i, amount, amount + amount * i,13 * amount);
+        for (int i = 0;i < 13; i++) { //uses a for loop to draw all the lines in the grid
+        	g.drawLine(amount, amount + amount * i, 13 * amount, amount + amount * i); //all the horizontal lines
+        	g.drawLine(amount + amount * i, amount, amount + amount * i,13 * amount); //all the vertical lines
         }
     }
-    public void drawWinScreen(Graphics g, double length, double height) {
+    /**
+     * @param g Graphics object to help the method draw the win screen sprite
+     */
+    public void drawWinScreen(Graphics g) {
     	g.drawImage(winScreen,0,  0, null);
-    	//g.setColor(Color.blue);
-    	//g.fillRect(0,0,(int)length, (int)height);
     	g.setColor(Color.red);
 		Font myfont = new Font("Courier New",1, 50);
     	g.setFont(myfont);
@@ -93,11 +97,24 @@ public class MainDraw extends JComponent {
     	g.drawString("Press Enter to restart", 125, 300);
     }
     /**
+     * @param g Graphics object to help the method draw the death screen sprite
+     */
+    public void drawDeathScreen(Graphics g) {
+    	g.drawImage(deathScreen, 0, 0, null);
+    	g.setColor(Color.DARK_GRAY);
+    	g.fillRect(250, 233, 110, 25);
+    	g.setColor(Color.yellow);
+    	Font myfont = new Font("Courier New",1, 20);
+    	g.setFont(myfont);
+    	g.drawString("Score: " + deadMhos, 250, 250); //Prints the number of death Mhos
+    }
+    /**
      * Checks if all the Mho's are dead and thus, the player is victorious
      */
     public boolean checkVictory() {
     	System.out.println(deadMhos);
     	if (deadMhos == 12) { //If the number of dead Mhos is 12, then it means all the Mhos are dead and the player won
+    		winCount += 1;
     		return true;
     	} else {
     		return false;
@@ -113,19 +130,7 @@ public class MainDraw extends JComponent {
     			Mho[i][0] = 0;
     			Mho[i][1] = 0;
     			checkIfMhoDead();
-    		} /*else if (x == Mho[i][0] && y > Mho[i][1]) { //If the Mho is directly above the player, have the Mho move down
-        		Mho[i][1] += amount; 
-        		checkIfMhoDead();
-        	} else if (x == Mho[i][0] && y < Mho[i][1]) { //If the Mho is directly below the player, have the Mho move up
-        		Mho[i][1] -= amount; 
-        		checkIfMhoDead();
-        	} else if (x < Mho[i][0] && y == Mho[i][1]) { //If the Mho is to the left of the player, have the Mho move to the right
-        		Mho[i][0] -= amount; 
-        		checkIfMhoDead();
-        	} else if (x > Mho[i][0] && y == Mho[i][1]) { //If the Mho is to the right of the player, have the Mho move to the left
-        		Mho[i][0] += amount; 
-        		checkIfMhoDead();*/
-        	else if ((Mho[i][0]-x) == (Mho[i][1]-y)) { //If the Mho is located directly diagonal to the player, move towards the player
+    		} else if ((Mho[i][0]-x) == (Mho[i][1]-y)) { //If the Mho is located directly diagonal to the player, move towards the player
         		if ((x < Mho[i][0] && y < Mho[i][1])) { 
         			if (checkOverlap(-amount,-amount,i)) { 
         				//don't move
@@ -193,9 +198,8 @@ public class MainDraw extends JComponent {
                 		checkIfMhoDead();
         			}
         		} 
-    	} 
-    		
-    }
+        	} 
+    		}
     	}
 
     }
@@ -253,21 +257,18 @@ public class MainDraw extends JComponent {
     	for (int i = 0; i < 12; i++) { //check for overlap of mhos with player
     		if ((Mho[i][0] == x) && (Mho[i][1] == y)) {
     			isAlive = false;
-    			deathCount += 1;
     			repaint();
     		}
    		}
     	for (int i = 0; i < 20; i++) { //check for overlap of inner fences with player
     		if ((innerFences[i][0] == x) && (innerFences[i][1] == y)) {
     			isAlive = false;
-    			deathCount += 1;
     			repaint();
     		}
    		}
     	for (int i = 0; i < 44; i++) { //check for overlap of outer fences with player
     		if ((x == outerFences[i][0]) && (y == outerFences[i][1])) {
     			isAlive = false;
-    			deathCount += 1;
     			repaint();
     		}
     		}
@@ -304,11 +305,6 @@ public class MainDraw extends JComponent {
     	}
     	g.setColor(Color.black);
     }
-    //super invokes constructor for super class (in constructor of subclass)
-    //superclass is directly above in class hierarchy
-    //Access field in class that is masked (use as keyword)
-    //only works in constructor and nonstatic method
-    //super gives access to fields in superclass for a particular instance
     /**
      * Generates coordinates for the player
      */
@@ -353,7 +349,6 @@ public class MainDraw extends JComponent {
      */
     public void recalculatePlayer() {
     	for (int i = 0; i < 12; i++) {  	
-    		//System.out.println(Mho[i][0] / amount + " and " + Mho[i][1] / amount);
     		if ((Mho[i][0]) == (x) && ((Mho[i][1]) == (y))) {
     			spawnPlayer();
     			recalculatePlayer();
@@ -367,7 +362,6 @@ public class MainDraw extends JComponent {
     			}
     		}
     	}
-    	//System.out.println(x/amount + "and" + y/amount);
     	}
     /**
      * Checks for overlap of Mhos with inner fences or other Mhos. If there is an overlap, regenerate Mho's coordinates
@@ -376,7 +370,7 @@ public class MainDraw extends JComponent {
     	for (int i = 0; i < 12; i++) { //check for overlap of mhos with mhos
     		for (int k = i + 1; k < 12; k ++) {
     			if ((Mho[i][0]) == (Mho[k][0]) && (Mho[i][1]) == (Mho[k][1])) {
-    				spawnMhos(); //If there is an overlap, then regenerate the values and check if they aren't overlapping
+    				spawnMhos(); //If there is an overlap, then regenerate the values and check if they are overlapping
     				recalculateMhos();
     			}
     		}
@@ -384,7 +378,7 @@ public class MainDraw extends JComponent {
     	for (int i = 0; i < 20; i++) { //check for overlap of fences with mhos
     		for (int k = 0; k < 12; k ++) {
     			if ((innerFences[i][0]) == (Mho[k][0]) && (innerFences[i][1]) == (Mho[k][1])) {
-    				spawnMhos();
+    				spawnMhos(); //If there is an overlap, then regenerate the values and check if they are overlapping
     				recalculateMhos();
     			}
     		}
@@ -476,6 +470,9 @@ public class MainDraw extends JComponent {
     public void stay() {
     	repaint();
     }
+    /**
+     * Moves to a player on a ranom square on the screen that isn't a fence
+     */
     public void moveJump() {
     	Random random  = new Random();
     	int max = 12;
